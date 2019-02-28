@@ -4,8 +4,10 @@ int main (void)
 	float v;
 	float l;
 	float t;
+	printf("v=");
 	scanf("%f", &v);
-	scanf ("%f", &l);
+	printf("l=");
+	scanf("%f", &l);
 	t=l/v;
 	printf("time = %f\n", t);
 	getchar();
