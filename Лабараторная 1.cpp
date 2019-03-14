@@ -8,7 +8,7 @@ int main (void)
 	scanf("%f", &v);
 	printf("l=");
 	scanf("%f", &l);
-	t=l/v;
+	t=2*l/v;
 	printf("time = %f\n", t);
 	getchar();
 	return 0;
