@@ -4,7 +4,7 @@
 #define YES 1 
 #define NO 0 
 #define MAXLINE 1000 
-void process_line(char buffer[]); // объ€вл€ем функцию 
+void process_line(char line[]); // объ€вл€ем функцию 
 
 int main(void)
 {
@@ -35,24 +35,16 @@ void process_line(char line[])
 		c = *in_ptr; // вз€ть текущий символ из буфера 
 		if (c == ' ' || c == '.' || c == ',' || c == '\n' || c == '?' || c == '!' || c == ';' || c == ':' || c == '-' || c == '_' || c == '(' || c == ')' || c == '\t' || c == '/' || c == '&' || c == '"') // разделитель найден
 		{
-			if (word == YES) // если подходит по условию выполнить... 
-			{	
-				if(symb == NO)
-				{ 
-					while (word_ptr < in_ptr)
-						*out_ptr = *word_ptr++;// слово не подлежит удалению оно копируетс€ в результирующую строку вместе со своим разделителем 
-				
-					
-				}
-			}
-			else//если это разделитель, то...
-			{
-				*out_ptr++ = c;//возвращаем разделитель на место
-			}
 			if (symb == NO)
 			{
-				*pred_word_ptr = *word_ptr;
+				pred_word_ptr = word_ptr;
 			}
+			if (word == YES || symb == YES)
+			{
+					while (word_ptr < in_ptr)
+					*word_ptr++, *out_ptr++;
+			}
+			*out_ptr++ = c;
 			symb = NO;
 			word = NO;
 		}
@@ -60,7 +52,7 @@ void process_line(char line[])
 		{
 			while(word_ptr < in_ptr) // слово не подлежит удалению, оно копируетс€ в результирующую строку вместе со своим разделителем
 			{
-				*pred_word_ptr = *word_ptr++;// копирование слова на место предпоследнего
+		    	*pred_word_ptr++ = *word_ptr++;// копирование слова на место предпоследнего
 			}
 		}
 		else
@@ -77,7 +69,7 @@ void process_line(char line[])
 		}
 		in_ptr++;
 	} while (c != '\0');// продолжать до конца строки
-	out_ptr = '\0';//устанавливаем конец строки
+	*out_ptr = '\0';//устанавливаем конец строки
 }
 
 
