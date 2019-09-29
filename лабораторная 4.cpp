@@ -1,10 +1,10 @@
-#pragma warning(disable : 4996) //РЅРµРѕР±С…РѕРґРёРјРѕ РґР»СЏ РёСЃРїРѕР»СЊР·РѕРІР°РЅРёСЏ СѓСЃС‚Р°СЂРµРІС€РёС… С„СѓРЅРєС†РёР№ (scanf) 
+#pragma warning(disable : 4996) //необходимо для использования устаревших функций (scanf) 
 #include <stdio.h> 
-// РѕРїСЂРµРґРµР»РµРЅРёРµ СЃРёРјРІРѕР»РёС‡РµСЃРєРёС… РєРѕРЅСЃС‚Р°РЅС‚ 
+// определение символических констант 
 #define YES 1 
 #define NO 0 
 #define MAXLINE 1000 
-void process_line(char line[]); // РѕР±СЉСЏРІР»СЏРµРј С„СѓРЅРєС†РёСЋ 
+void process_line(char line[]); // объявляем функцию 
 
 int main(void)
 {
@@ -21,29 +21,28 @@ int main(void)
 
 void process_line(char line[])
 {
-	char c; // С‚РµРєСѓС‰РёР№ СЃРёРјРІРѕР» 
-	int word = NO; // РїСЂРёР·РЅР°Рє СЃР»РѕРІР° 
-	int symb = NO; // РёРЅРґРёРєР°С‚РѕСЂ РЅР°Р»РёС‡РёСЏ Р»РёС€РЅРёС… СЃРёРјРІРѕР»РѕРІ 
-	int i = 0; // РїРѕР·РёС†РёСЏ С‚РµРєСѓС‰РµРіРѕ СЃРёРјРІРѕР»Р° РёСЃС…РѕРґРЅРѕР№ cС‚СЂРѕРєРё  
-	int pos = 0; // РїРѕР·РёС†РёСЏ С‚РµРєСѓС‰РµРіРѕ СЃРёРјРІРѕР»Р° СЂРµР·СѓР»СЊС‚РёСЂСѓСЋС‰РµР№ СЃС‚СЂРѕРєРё 
-	int start = 0; // РїРѕР·РёС†РёСЏ РЅР°С‡Р°Р»Р° СЃР»РѕРІР° 
-	int pred_start = 0; // РїРѕР·РёС†РёСЏ РЅР°С‡Р°Р»Р° РїСЂРµРґС‹РґСѓС‰РµРіРѕ СЃР»РѕРІР°
+	char c; // текущий символ 
+	int word = NO; // признак слова 
+	int symb = NO; // индикатор наличия лишних символов 
+	int i = 0; // позиция текущего символа исходной cтроки 
+	int pos = 0; // позиция текущего символа результирующей строки 
+	int start = 0; // позиция начала слова 
+	int pred_start = 0; // позиция начала предыдущего слова 
 
 	do
 	{
 		c = line[i];
-		if (c == ' ' || c == '.' || c == ',' || c == '\n' )
+		if (c == ' ' || c == '.' || c == ',' || c == '\n')
 		{
-			if (word == YES)
-			{
-				for (; start < i; start++, pos++)
-				{
-					line[pos] = line[start];
-				}
-			}
 			if (symb == NO)
 			{
 				pred_start = start;
+			}
+			if (word == YES || symb == YES)
+			{
+				for (; start < i; start++, pos++)
+				{
+				}
 			}
 			line[pos++] = c;
 			symb = NO;
@@ -51,10 +50,11 @@ void process_line(char line[])
 		}
 		else if (c == '\0')
 		{
-			for (; start < i; start++, pos++)
+			for (; start < i; pos++)
 			{
-				line[pos] = line[pred_start];
+				line[pred_start++] = line[start++];
 			}
+			line[pred_start] = c;
 		}
 		else
 		{
@@ -69,7 +69,6 @@ void process_line(char line[])
 			word = YES;
 		}
 		i++;
-	} 
-	while (c != '\0');
+	} while (c != '\0');
 	line[pos] = '\0';
 }
