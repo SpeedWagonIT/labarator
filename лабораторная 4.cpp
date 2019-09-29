@@ -1,5 +1,6 @@
 #pragma warning(disable : 4996) //необходимо дл€ использовани€ устаревших функций (scanf) 
 #include <stdio.h> 
+#include <locale.h>
 // определение символических констант 
 #define YES 1 
 #define NO 0 
@@ -8,6 +9,7 @@ void process_line(char line[]); // объ€вл€ем функцию
 
 int main(void)
 {
+	setlocale(LC_ALL, "Rus");
 	char line[MAXLINE]; 
     printf("Please, enter some words\n"); 
     gets(line); 
