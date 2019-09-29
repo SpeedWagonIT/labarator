@@ -4,7 +4,7 @@
 #define YES 1 
 #define NO 0 
 #define MAXLINE 1000 
-void process_line(char buffer[]); // объ€вл€ем функцию 
+void process_line(char line[]); // объ€вл€ем функцию 
 
 int main(void)
 {
@@ -14,65 +14,61 @@ int main(void)
     process_line(line); 
     printf("Result:\n"); 
     puts(line); 
+	getchar();
+	getchar();
 	return 0;
 }
 
-void process_line(char buffer[])
+void process_line(char line[])
 {
 	char c; // текущий символ 
-    int word = NO; // признак слова 
-    int symb = NO; // индикатор наличи€ лишних символов 
-    int ish = 0; // позици€ текущего символа исходной cтроки 
-    int res = 0; // позици€ текущего символа результирующей строки 
-    int start = 0; // позици€ начала слова 
-    int pred_start = 0; // позици€ начала предыдущего слова 
-    int j; 
-	
+	int word = NO; // признак слова 
+	int symb = NO; // индикатор наличи€ лишних символов 
+	int i = 0; // позици€ текущего символа исходной cтроки 
+	int pos = 0; // позици€ текущего символа результирующей строки 
+	int start = 0; // позици€ начала слова 
+	int pred_start = 0; // позици€ начала предыдущего слова 
+
 	do
 	{
-		c = buffer[ish]; // вз€ть текущий символ из буфера 
-        if (c == ' ' || c == '.' || c == ',' || c == '\n' || c == '?' || c == '!' || c == ';' || c == ':' || c == '-' || c == '_' || c == '(' || c == ')' || c == '\t' || c == '/' || c == '&' || c == '"') // разделитель найден
+		c = line[i];
+		if (c == ' ' || c == '.' || c == ',' || c == '\n' || c == '\0')
 		{
-			if (word == YES) // если подходит по условию выполнить... 
+			if (word == YES)
 			{
-				for (j = start; j <= ish; j++) // слово не подлежит удалению оно копируетс€ в результирующую строку вместе со своим разделителем 
+				for (; start < i; start++, pos++)
 				{
-					buffer[res++] = buffer[j];//копирование слова
+					line[pos] = line[start];
 				}
 			}
-			else//если это разделитель, то...
-			{
-				buffer[res++] = buffer[ish];//возвращаем разделитель на место
-			}
-			if(symb == NO)
+			if (symb == NO)
 			{
 				pred_start = start;
 			}
-				symb = NO;
-				word = NO;
-			}
-			else if(c=='\0') // если то конец строки, то последнее сорвр пишем вместо предпоследнего
-			{
-				for (j=start; j<= ish; j++) // слово не подлежит удалению, оно копируетс€ в результирующую строку вместе со своим разделителем
-				{
-					buffer[pred_start++] = buffer[j];// копирование слова на место предпоследнего
-				}
-			}
-			else
-			{
-				if ((c < 'a' || c > 'z') && (c < 'A' || c > 'Z')) // проверить не €вл€етс€ ли этот символ лишним
-				{
-					symb = YES; // в слове есть лишний символ
-				}
-				if (word == NO && symb == NO) // найдена перва€ буква слова 
-				{
-					start = ish; // запомнить позицию начала слова 
-				}
-				word = YES;
-			}
-			ish++;
+			line[pos++] = c;
+			symb = NO;
+			word = NO;
 		}
-		while (c != '\0');// продолжать до конца строки
-		buffer[res] = '\0';//устанавливаем конец строки
-	}
-		
+		else if (c == '\0')
+		{
+			for (; start < i; start++, pos++)
+			{
+				line[pos] = line[pred_start];
+			}
+		}
+		else
+		{
+			if ((c < 'a' || c > 'z') && (c < 'A' || c > 'Z'))
+			{
+				symb = YES;
+			}
+			if (word == NO && symb == NO)
+			{
+				start = i;
+			}
+			word = YES;
+		}
+		i++;
+	} while (c != '\0');
+		line[pos] = '\0';
+}
