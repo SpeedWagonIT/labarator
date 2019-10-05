@@ -41,8 +41,9 @@ void process_line(char line[])
 			}
 			if (word == YES || symb == YES)
 			{
-					while (word_ptr < in_ptr)
-					*word_ptr++, *out_ptr++;
+				for (; word_ptr < in_ptr; word_ptr++, out_ptr++)
+				{
+				}
 			}
 			*out_ptr++ = c;
 			symb = NO;
@@ -50,10 +51,11 @@ void process_line(char line[])
 		}
 		else if (c == '\0') // если то конец строки, то последнее сорвр пишем вместо предпоследнего
 		{
-			while(word_ptr < in_ptr) // слово не подлежит удалению, оно копируется в результирующую строку вместе со своим разделителем
+			for (; word_ptr < in_ptr; out_ptr++)
 			{
-		    	*pred_word_ptr++ = *word_ptr++;// копирование слова на место предпоследнего
+				*pred_word_ptr++ = *word_ptr++;
 			}
+			*pred_word_ptr = c;
 		}
 		else
 		{
