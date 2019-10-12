@@ -40,7 +40,7 @@ void process_line(char line[])
 				{
 					*pred_word_ptr = *word_ptr;
 				}
-			break;
+			//break;
 		}
 		else if (c == ' ') // разделитель найден
 		{
