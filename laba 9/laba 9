@@ -1,0 +1,97 @@
+#pragma warning(disable : 4996)
+#include <stdio.h>
+#define MAXLINE 1024
+#define YES 1
+#define NO 0
+char filestr[MAXLINE];
+char c;
+char *pred_word_ptr;
+char *word_ptr;
+
+void delword(void);
+void mirrortext(void);
+void mirrorres(void);
+int main(void)
+{
+	printf("Current contents of the file text.txt:\n");
+	mirrortext();
+	delword();
+	printf("\nResult of processing (res.txt):\n");
+	mirrorres();
+	getchar();
+	getchar();
+	return 0;
+}
+
+void delword(void)
+{
+	FILE *frd, *fwr;
+	char *filestr_ptr;
+	int cnt = 0, cnt1 = 0;
+	//char *ptr;
+	//char *in_ptr;
+	int word = NO;
+	int symb = NO;
+	frd = fopen("text.txt", "rt");
+	fwr = fopen("res.txt", "w");
+	if (frd == NULL) {
+		printf("File hasnot been opened");
+		return;
+	}
+	while (!feof(frd)) {
+		filestr_ptr = fgets(filestr, MAXLINE, frd);
+		if (filestr_ptr == NULL)
+			break;
+		while(*filestr_ptr != '\0')
+		{
+			c = *filestr_ptr;
+			if (c != ' ' || c != '\t' || c != '.' || c != '\0' || c != '\n' || c != '.')
+				word = YES;
+			else
+				word = NO;
+			if (word == YES)
+				cnt++;
+		
+			filestr_ptr++;
+
+		} 
+		fprintf(fwr, "%d",cnt);
+		/*fputs("\n", fwr);*/
+	}
+	fclose(frd);
+	fclose(fwr);
+}
+
+	void mirrortext(void)
+	{
+		FILE *fp;
+		fp = fopen("text.txt", "rt");
+		if (fp == NULL) // � ��� �����?
+		{
+			printf("FILE HAS NOT BEEN OPENED");
+			exit(1);
+		}
+		while (!feof(fp))
+		{
+			c = fgetc(fp);
+			printf("%c", c);
+		}
+		fclose(fp);
+	}
+
+	void mirrorres(void)
+	{
+		FILE *fp;
+		fp = fopen("res.txt", "rt");
+		if (fp == NULL) // � ��� �����?
+		{
+			printf("FILE HAS NOT BEEN OPENED");
+			exit(1);
+		}
+		while (!feof(fp))
+		{
+			c = fgetc(fp);
+			printf("%c", c);
+		}
+		fclose(fp);
+	}
