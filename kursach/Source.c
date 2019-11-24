@@ -7,10 +7,12 @@
 typedef struct {
 	int day;
 	char month[20];
-	int event;
+	//char event[100];
+	char firstname[20];
+	char lastname[20];
 	//int year;
-	char birthday[100];
-	char holiday[100];
+	/*char birthday[100];
+	char holiday[100];*/
 }almс;
 
 void out(FILE *f, almс *mp, int size)
@@ -27,35 +29,39 @@ void in(FILE *f, almс *mp, int *size)
 
 almс add()
 {
+	/*int sel;*/
 	almс mp;
 	printf("\n select month: ");
 	scanf("%s", &mp.month);
 	printf("\n select day: ");
 	scanf("%d", &mp.day);
-	printf("\n holiday[1]/bithday[0]?");
-	scanf("%d", &mp.event);
-	switch (mp.event) {
+	/*printf("\nselect: event[1] or birtday[2]? ");
+	scanf("%d", &sel);*/
+	printf("\nWho's birthday(Firstname, Lastname): ");
+	scanf("\n %s %s", &mp.firstname, &mp.lastname);
+	/*switch (sel) {
 	case 1:
-		printf("\nthe name of the holiday");
-		scanf("\n %s", &mp.holiday);
+		printf("\nthe name of the event");
+		scanf("\n %s", &mp.event);
 		break;
 	case 2:
-		printf("\nWho's birthday");
-		scanf("\n %s", &mp.birthday);
+		printf("\nWho's birthday(Firstname, Lastname): ");
+		scanf("\n %s %s", &mp.firstname, &mp.lastname);
 		break;
-	}
+	}*/
 	return mp;
 }
 
 void show(almс *mp, int size)
 {
-	for (int i = 0; i < size; i++)
+	int i;
+	for (i = 0; i < size; i++)
 	{
-		printf("\nmonth: %s \nday: %d \nholiday: %s \nbirthday: %s ", mp[i].month, mp[i].day, mp[i].holiday, mp[i].birthday);
+		printf("\nmonth: %s day: %d firstname: %s lastname: %s", mp[i].month, mp[i].day, mp[i].firstname, mp[i].lastname );
 	}
 	
 }
-//
+
 //int day(const void *f, const void *s)
 //{
 //	return strcmp(((almс*)f)->day, ((almс*)s)->day) > 0;
