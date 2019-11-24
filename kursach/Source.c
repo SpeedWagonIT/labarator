@@ -57,7 +57,7 @@ void show(almс *mp, int size)
 	int i;
 	for (i = 0; i < size; i++)
 	{
-		printf("\nmonth: %s day: %d firstname: %s lastname: %s", mp[i].month, mp[i].day, mp[i].firstname, mp[i].lastname );
+		printf("\n %s %d %s %s", mp[i].month, mp[i].day, mp[i].firstname, mp[i].lastname );
 	}
 	
 }
