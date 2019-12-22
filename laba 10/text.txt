@@ -1,0 +1,885 @@
+#define _CRT_SECURE_NO_WARNINGS
+#include <stdio.h>
+#include <stdlib.h>
+#include <locale.h>
+#include <time.h>
+#include <string.h>
+#include <stdbool.h>
+
+
+typedef struct Birth_day Birthday;//Линейный список для таблицы Дни рождения
+struct Birth_day
+{
+	int id;
+	int day;
+	int month;
+	int year;
+	char fio[100];
+	Birthday* next;
+};
+typedef struct celebration Celebration;//Линейный список для таблицы Праздники
+typedef struct celebration
+{
+	int id;
+	int day;
+	int month;
+	char name[100];
+	Celebration* next;
+};
+typedef struct event Event;//Линейный список для таблицы События
+struct event
+{
+	int id;
+	int day;
+	int month;
+	int year;
+	char description[100];
+	Event* next;
+};
+
+int menu(void);
+void ReadFile(Birthday*, Celebration*, Event*, int*, int*, int*);//Чтение БД
+void SaveFile(Birthday*, Celebration*, Event*, int, int, int);//Сохрание БД
+
+Birthday* initBirthdayList(int, int, int, int, char[100]);//Инициализация списка для таблицы Дни рождения
+Birthday* AddBirthday(Birthday*, int, int, int, int, char[100]);//добавляет запись в таблицу Дни рождения
+void ShowBirthdayList(Birthday*);//Показаывает таблицу Дни рождения
+void BirthdayThisMonth(Birthday*, int);//Показывает дни рождения текущего месяца
+void BirthdayFIO(Birthday*);//Показывает по указанной фамилии дни рождения
+void EditBirthday(Birthday*);//Редактирует записи таблицы Дни рождения
+void AddInputBirthday(Birthday*, int*);//заносит введённую с клавиатуры запись в таблицу Дни рождения
+
+Celebration* initCelebrationList(int, int, int, char[100]);//Инициализация списка для таблицы Праздники
+Celebration* AddCelebration(Celebration*, int, int, int, char[100]);//добавляет запись в таблицу Праздники
+void ShowCelebrationList(Celebration*);//Показаывает таблицу Праздники
+void CelebrationThisMonth(Celebration*, int);//Показывает праздники текущего месяца
+void EditCelebration(Celebration*);//Редактирует записи таблицы Праздники
+void AddInputCelebration(Celebration*, int*);//заносит введённую с клавиатуры запись в таблицу Праздники
+
+Event* initEventList(int, int, int, int, char[100]);//Инициализация списка для таблицы События
+Event* AddEvent(Event*, int, int, int, int, char[100]);//добавляет запись в таблицу События
+void ShowEventList(Event*);//Показаывает таблицу События
+void EventThisMonth(Event*, int, int);//Показывает события текущего месяца
+void EditEvent(Event*);//Редактирует записи таблицы События
+void AddInputEvent(Event*, int*);//заносит введённую с клавиатуры запись в таблицу События
+
+void CelebEventBirthThisMonth(Birthday*, Celebration*, Event*);//Показывает записи для текущего у всех таблиц
+void DateCategoryFIO(Birthday*, Celebration*, Event*);//открывает меню выбора команд: показать записи по категория, фамилиям
+void Edit(Birthday*, Celebration*, Event*, int, int, int);//открывает меню для выбора таблицы для редактирования записей
+void Add(Birthday*, Celebration*, Event*, int*, int*, int*);//открывает меню для выбора таблицы для добавления записей
+void Delete(Birthday*, Celebration*, Event*, int*, int*, int*);//открывает меню для выбора таблицы для удаления записей
+void DeleteBirthday(Birthday*, int);void DeleteCelebration(Celebration*, int);void DeleteEvent(Event*, int);//удаления записи в соответствующих таблицах
+
+int ChooseBirthdayId(Birthday*);int ChooseCelebrationId(Celebration*);int ChooseEventId(Event*);//возвращает в случае удачи введённый с клавиатуры id записи в соответствующих таблицах
+
+bool NotCorrectDate(int, int, int);//проверяет корректность введённой даты
+char * SpaceReplace(char[]);//заменяет пробелы на '_'
+
+int main() {
+	setlocale(LC_ALL, "Russian");
+
+	Birthday* BD = initBirthdayList(-1, -1, -1, -1, "???");
+	Celebration* CL = initCelebrationList(-1, -1, -1, "???");
+	Event* EV = initEventList(-1, -1, -1, -1, "???");
+	int BDcount = 0, CLcount = 0, EVcount = 0;
+	ReadFile(BD, CL, EV, &BDcount, &CLcount, &EVcount);
+	int n = 0;
+	while (n == 0) {
+		n = menu();
+
+		switch (n)
+		{
+		case 1:Add(BD, CL, EV, &BDcount, &CLcount, &EVcount);break;
+		case 2:Edit(BD, CL, EV, BDcount, CLcount, EVcount);break;
+		case 3:Delete(BD, CL, EV, &BDcount, &CLcount, &EVcount);break;
+		case 4:CelebEventBirthThisMonth(BD, CL, EV);break;
+		case 5:DateCategoryFIO(BD, CL, EV);break;
+		case 6:exit(0);break;
+		}
+		n = 0;
+	}
+	system("pause");
+	return 0;
+}
+int menu(void)
+{
+	int n = 0;
+	while ((n <= 0) || (n > 6))
+	{
+		system("cls");
+		printf("База данных календарь.\n");
+		printf("1) Добавить событие, праздник, день рождения;\n");
+		printf("2) Редактирование записей;\n");
+		printf("3) Удаление записей;\n");
+		printf("4) События, празданики на текущий месяц;\n");
+		printf("5) Даты по категориям, фамилиям;\n");
+		printf("6) Выход;\n");
+		printf("Введите корректно номер команды: ");
+		if (scanf("%d", &n) != 1) scanf("%*s");
+	}
+	return n;
+}
+
+void ReadFile(Birthday *BD, Celebration *CL, Event *EV, int *BDcount, int *CLcount, int *EVcount)
+{
+	FILE *f;
+	f = fopen("DB.dat", "r");
+	if (f == NULL) { printf("Файл не найден");return; }
+	int n = 0;
+	fscanf(f, "%d", &n);*BDcount = n;
+	int id, dd, mm, yy, i;char fio[100];
+	for (i = 1;i <= n;i++)
+	{
+		fscanf(f, "%d%d%d%d%s", &id, &dd, &mm, &yy, &fio);
+		BD = AddBirthday(BD, id, dd, mm, yy, fio);
+	}
+	fscanf(f, "%d", &n);*CLcount = n;
+	char name[100];
+	for (i = 1;i <= n;i++)
+	{
+		fscanf(f, "%d%d%d%s", &id, &dd, &mm, &name);
+		CL = AddCelebration(CL, id, dd, mm, name);
+	}
+	fscanf(f, "%d", &n);*EVcount = n;
+	char description[100];
+	for (i = 1;i <= n;i++)
+	{
+		fscanf(f, "%d%d%d%d%s", &id, &dd, &mm, &yy, &description);
+		EV = AddEvent(EV, id, dd, mm, yy, description);
+	}
+
+	fclose(f);
+
+}
+
+void SaveFile(Birthday* B, Celebration* C, Event* E, int BDcount, int CLcount, int EVcount)
+{
+	FILE *f;
+	f = fopen("DB.dat", "w");
+	fprintf(f, "%d\n", BDcount);
+	Birthday *p;
+	p = B;p = p->next;
+	do
+	{
+		if (p == NULL)
+		{
+			break;
+		}
+		fprintf(f, "%d\t%d\t%d\t%d\t%s\n", p->id, p->day, p->month, p->year, p->fio);
+		p = p->next;
+	} while (p != NULL);
+
+	fprintf(f, "%d\n", CLcount);
+	Celebration *pp;
+	pp = C;pp = pp->next;
+	do
+	{
+		if (pp == NULL)
+		{
+			break;
+		}
+		fprintf(f, "%d\t%d\t%d\t%s\n", pp->id, pp->day, pp->month, pp->name);
+		pp = pp->next;
+	} while (pp != NULL);
+
+	fprintf(f, "%d\n", EVcount);
+	Event *ppp;
+	ppp = E;ppp = ppp->next;
+	do
+	{
+		if (ppp == NULL)
+		{
+			break;
+		}
+		fprintf(f, "%d\t%d\t%d\t%d\t%s\n", ppp->id, ppp->day, ppp->month, ppp->year, ppp->description);
+		ppp = ppp->next;
+	} while (ppp != NULL);
+
+	fclose(f);
+}
+
+
+
+
+Birthday* initBirthdayList(int id, int dd, int mm, int yy, char fio[100])
+{
+	Birthday *lst;
+	// выделение памяти под корень списка
+	lst = (Birthday*)malloc(sizeof(Birthday));
+	lst->id = id;lst->day = dd;lst->month = mm;lst->year = yy;strcpy(lst->fio, fio);
+	lst->next = NULL; // это последний узел списка
+	return lst;
+}
+Birthday* AddBirthday(Birthday* A, int id, int dd, int mm, int yy, char fio[100])
+{
+	Birthday *temp, *p;
+	temp = (Birthday*)malloc(sizeof(Birthday));
+	p = A->next; // сохранение указателя на следующий узел
+	A->next = temp; // предыдущий узел указывает на создаваемый
+	temp->id = id;temp->day = dd;temp->month = mm;temp->year = yy;strcpy(temp->fio, fio);
+	temp->next = p; // созданный узел указывает на следующий элемент
+	return(temp);
+}
+
+void ShowBirthdayList(Birthday* A)
+{
+	printf("id\tДата\tФИО\n");
+	Birthday *p;
+	p = A;p = p->next;
+	do
+	{
+		if (p == NULL)
+		{
+			printf("Нет Дней Рождения\n");
+			break;
+		}
+		printf("%d\t%d.%d.%d\t%s\n", p->id, p->day, p->month, p->year, p->fio);
+		p = p->next;
+	} while (p != NULL);
+}
+
+void BirthdayThisMonth(Birthday* A, int month)
+{
+	printf("Дни рождения:\n");
+	printf("День\tФИО\n");
+	Birthday *p;
+	p = A;
+	do
+	{
+		if (p->month == month) printf("%d\t%s\n", p->day, p->fio);
+		p = p->next;
+	} while (p != NULL);
+}
+void BirthdayFIO(Birthday* A)
+{
+
+	printf("Введите фамилию: ");
+	char str[100];
+	scanf("%s", &str);
+	printf("%s\n", str);
+	printf("id\tДата\t\tФИО\n");
+	Birthday *p;
+	p = A;
+	do
+	{
+		if (strstr(p->fio, str) != NULL) printf("%d\t%d.%d.%d\t%s\n", p->id, p->day, p->month, p->year, p->fio);
+		p = p->next;
+	} while (p != NULL);
+}
+
+void EditBirthday(Birthday* A)
+{
+	int n = 0, id = 0;bool exists = false;
+	while ((id <= 0))
+	{
+		printf("Введите id: ");
+		if (scanf("%d", &id) != 1) scanf("%*s");
+	}
+	Birthday *p;
+	p = A;
+	do
+	{
+		if (p->id == id) {
+			exists = true;
+			break;
+		}
+		p = p->next;
+	} while (p != NULL);
+	if (!exists) return;
+
+
+	n = 0;
+	while ((n <= 0) || (n > 4))
+	{
+		system("cls");
+		printf("1) Изменить дату;\n");
+		printf("2) Изменить ФИО;\n");
+		printf("3) Отмена;\n");
+		printf("Введите корректно номер команды: ");
+		if (scanf("%d", &n) != 1) scanf("%*s");
+	}
+	int dd = 0, mm = 0, yy = 0;
+	switch (n)
+	{
+	case 1: {
+		while (NotCorrectDate(dd, mm, yy))
+		{
+			printf("Введите правильные день, месяц, год: ");
+			if (scanf("%d", &dd) != 1) scanf("%*s");
+			if (scanf("%d", &mm) != 1) scanf("%*s");
+			if (scanf("%d", &yy) != 1) scanf("%*s");
+		}
+		p->day = dd;p->month = mm;p->year = yy;
+
+		break;
+	}
+	case 2: {
+		printf("Введите ФИО: ");
+		getchar();
+		char str[100];
+		fflush(stdin);
+		gets(str);
+		strcpy(str, SpaceReplace(str));
+		strcpy(p->fio, str);
+		break;
+	}
+	case 3:break;
+	}
+	system("pause");
+
+}
+
+
+
+
+Celebration* initCelebrationList(int id, int dd, int mm, char name[100])
+{
+	Celebration *lst;
+	// выделение памяти под корень списка
+	lst = (Celebration*)malloc(sizeof(Celebration));
+	lst->id = id;lst->day = dd;lst->month = mm;strcpy(lst->name, name);
+	lst->next = NULL; // это последний узел списка
+	return lst;
+}
+Celebration* AddCelebration(Celebration* A, int id, int dd, int mm, char name[100])
+{
+	Celebration *temp, *p;
+	temp = (Celebration*)malloc(sizeof(Celebration));
+	p = A->next; // сохранение указателя на следующий узел
+	A->next = temp; // предыдущий узел указывает на создаваемый
+	temp->id = id;temp->day = dd;temp->month = mm;strcpy(temp->name, name);
+	temp->next = p; // созданный узел указывает на следующий элемент
+	return(temp);
+}
+void ShowCelebrationList(Celebration* A)
+{
+	printf("id\tДата\tПраздник\n");
+	Celebration *p;
+	p = A;p = p->next;
+	do
+	{
+		if (p == NULL)
+		{
+			printf("Нет Праздников\n");
+			break;
+		}
+		printf("%d\t%d.%d\t%s\n", p->id, p->day, p->month, p->name);
+		p = p->next;
+	} while (p != NULL);
+}
+void CelebrationThisMonth(Celebration* A, int month)
+{
+	printf("Праздники:\n");
+	printf("День\tНазвание\n");
+	Celebration *p;
+	p = A;
+	do
+	{
+		if (p->month == month) printf("%d\t%s\n", p->day, p->name);
+		p = p->next;
+	} while (p != NULL);
+}
+
+void EditCelebration(Celebration* A)
+{
+	int n = 0, id = 0;bool exists = false;
+	while ((id <= 0))
+	{
+		printf("Введите id: ");
+		if (scanf("%d", &id) != 1) scanf("%*s");
+	}
+	Celebration *p;
+	p = A;
+	do
+	{
+		if (p->id == id) {
+			exists = true;
+			break;
+		}
+		p = p->next;
+	} while (p != NULL);
+	if (!exists) return;
+
+
+	n = 0;
+	while ((n <= 0) || (n > 4))
+	{
+		system("cls");
+		printf("1) Изменить дату;\n");
+		printf("2) Изменить название;\n");
+		printf("3) Отмена;\n");
+		printf("4) Выход в основное меню;\n");
+		printf("Введите корректно номер команды: ");
+		if (scanf("%d", &n) != 1) scanf("%*s");
+	}
+	int dd = 0, mm = 0, yy = 0;
+	switch (n)
+	{
+	case 1: {
+		while (NotCorrectDate(dd, mm, yy))
+		{
+			printf("Введите правильные день, месяц: ");
+			if (scanf("%d", &dd) != 1) scanf("%*s");
+			if (scanf("%d", &mm) != 1) scanf("%*s");
+		}
+		p->day = dd;p->month = mm;
+
+		break;
+	}
+	case 2: {
+		printf("Введите название: ");
+		getchar();
+		char str[100];
+		fflush(stdin);
+		gets(str);
+		strcpy(str, SpaceReplace(str));
+		strcpy(p->name, str);
+		break;
+	}
+	case 3:break;
+	case 4:break;
+	}
+	system("pause");
+
+}
+
+Event* initEventList(int id, int dd, int mm, int yy, char description[100])
+{
+	Event *lst;
+	// выделение памяти под корень списка
+	lst = (Event*)malloc(sizeof(Event));
+	lst->id = id;lst->day = dd;lst->month = mm;lst->year = yy;strcpy(lst->description, description);
+	lst->next = NULL; // это последний узел списка
+	return lst;
+}
+Event* AddEvent(Event* A, int id, int dd, int mm, int yy, char description[100])
+{
+	Event *temp, *p;
+	temp = (Event*)malloc(sizeof(Event));
+	p = A->next; // сохранение указателя на следующий узел
+	A->next = temp; // предыдущий узел указывает на создаваемый
+	temp->id = id;temp->day = dd;temp->month = mm;temp->year = yy;strcpy(temp->description, description);
+	temp->next = p; // созданный узел указывает на следующий элемент
+	return(temp);
+}
+
+void ShowEventList(Event* A)
+{
+	printf("id\tДата\tФИО\n");
+	Event *p;
+	p = A;p = p->next;
+	do
+	{
+		if (p == NULL)
+		{
+			printf("Нет Событий\n");
+			break;
+		}
+		printf("%d\t%d.%d.%d\t%s\n", p->id, p->day, p->month, p->year, p->description);
+		p = p->next;
+	} while (p != NULL);
+}
+
+void EventThisMonth(Event* A, int month, int year)
+{
+
+	printf("События:\n");
+	printf("День\tОписание\n");
+	Event *p;
+	p = A;
+	do
+	{
+		if ((p->month == month) && (p->year == year)) printf("%d\t%s\n", p->day, p->description);
+		p = p->next;
+	} while (p != NULL);
+}
+
+void EditEvent(Event* A)
+{
+	int n = 0, id = 0;bool exists = false;
+	while ((id <= 0))
+	{
+		printf("Введите id: ");
+		if (scanf("%d", &id) != 1) scanf("%*s");
+	}
+	Event *p;
+	p = A;
+	do
+	{
+		if (p->id == id) {
+			exists = true;
+			break;
+		}
+		p = p->next;
+	} while (p != NULL);
+	if (!exists) return;
+
+
+	n = 0;
+	while ((n <= 0) || (n > 4))
+	{
+		system("cls");
+		printf("1) Изменить дату;\n");
+		printf("2) Изменить описание;\n");
+		printf("3) Отмена;\n");
+		printf("4) Выход в основное меню;\n");
+		printf("Введите корректно номер команды: ");
+		if (scanf("%d", &n) != 1) scanf("%*s");
+	}
+	int dd = 0, mm = 0, yy = 0;
+	switch (n)
+	{
+	case 1: {
+		while (NotCorrectDate(dd, mm, yy))
+		{
+			printf("Введите правильные день, месяц, год: ");
+			if (scanf("%d", &dd) != 1) scanf("%*s");
+			if (scanf("%d", &mm) != 1) scanf("%*s");
+			if (scanf("%d", &yy) != 1) scanf("%*s");
+		}
+		p->day = dd;p->month = mm;p->year = yy;
+
+		break;
+	}
+	case 2: {
+		printf("Введите событие: ");
+		getchar();
+		char str[30];
+		fflush(stdin);
+		gets(str);
+		strcpy(str, SpaceReplace(str));
+		strcpy(p->description, str);
+		break;
+	}
+	case 3:break;
+	case 4:break;
+	}
+	system("pause");
+
+}
+
+
+void CelebEventBirthThisMonth(Birthday* B, Celebration* C, Event* E)
+{
+	time_t t;time(&t);localtime(&t);
+	int month = localtime(&t)->tm_mon + 1;
+	int year = localtime(&t)->tm_year + 1900;
+	BirthdayThisMonth(B, month);
+	CelebrationThisMonth(C, month);
+	EventThisMonth(E, month, year);
+	system("pause");
+}
+
+void DateCategoryFIO(Birthday *B, Celebration *C, Event *E)
+{
+	int n = 0;
+	while ((n <= 0) || (n > 5))
+	{
+		system("cls");
+		printf("1) Показать дни рождения;\n");
+		printf("2) Показать праздники;\n");
+		printf("3) Показать события;\n");
+		printf("4) Ввести фамилию;\n");
+		printf("5) Выход в основное меню;\n");
+		printf("Введите корректно номер команды: ");
+		if (scanf("%d", &n) != 1) scanf("%*s");
+	}
+	switch (n)
+	{
+	case 1:ShowBirthdayList(B);break;
+	case 2:ShowCelebrationList(C);break;
+	case 3:ShowEventList(E);break;
+	case 4:BirthdayFIO(B);break;
+	case 5:;break;
+	}
+	system("pause");
+}
+
+void Edit(Birthday* B, Celebration* C, Event* E, int BDcount, int CLcount, int EVcount)
+{
+	int n = 0;
+	while (n != 4)
+	{
+		while ((n <= 0) || (n > 4))
+		{
+			system("cls");
+			printf("1) Редактировать дни рождения;\n");
+			printf("2) Редактировать праздники;\n");
+			printf("3) Редактировать события;\n");
+			printf("4) Выход в основное меню;\n");
+			printf("Введите корректно номер команды: ");
+			if (scanf("%d", &n) != 1) scanf("%*s");
+		}
+		switch (n)
+		{
+		case 1:ShowBirthdayList(B);EditBirthday(B);ShowBirthdayList(B);break;
+		case 2:ShowCelebrationList(C);EditCelebration(C);ShowCelebrationList(C);break;
+		case 3:ShowEventList(E);EditEvent(E);ShowEventList(E);break;
+		case 4:return;break;
+		}
+		SaveFile(B, C, E, BDcount, CLcount, EVcount);
+		n = 0;
+		system("pause");
+	}
+}
+
+void Add(Birthday* B, Celebration* C, Event* E, int* BDcount, int* CLcount, int* EVcount)
+{
+	int n = 0;
+	while (n != 4)
+	{
+
+		while ((n <= 0) || (n > 4))
+		{
+			system("cls");
+			printf("1) Добавить день рождения;\n");
+			printf("2) Добавить праздник;\n");
+			printf("3) Добавить событие;\n");
+			printf("4) Выход в основное меню;\n");
+			printf("Введите корректно номер команды: ");
+			if (scanf("%d", &n) != 1) scanf("%*s");
+		}
+		switch (n)
+		{
+		case 1:AddInputBirthday(B, &(*BDcount));ShowBirthdayList(B);break;
+		case 2:AddInputCelebration(C, &(*CLcount));ShowCelebrationList(C);break;
+		case 3:AddInputEvent(E, &(*EVcount));ShowEventList(E);break;
+		case 4:return;break;
+		}
+		SaveFile(B, C, E, *BDcount, *CLcount, *EVcount);
+		system("pause");
+		n = 0;
+	}
+}
+
+bool NotCorrectDate(int d, int m, int y)
+{
+	return (m > 12) || (m <= 0) || (d <= 0) || (d > 31) || (m == 2) && ((y % 4 == 0) && (d > 28) || (d > 29)) || (d == 31) && ((m == 9) || (m == 11) || (m == 4) || (m == 6));
+}
+
+void AddInputBirthday(Birthday* A, int* BDCount)
+{
+	Birthday *p, *g;int max = 0;
+	p = A;
+	do
+	{
+		if (p->id > max) max = p->id;
+		g = p;
+		p = p->next;
+	} while (p != NULL);
+	p = g;
+	int dd = 0, mm = 0, yy = 0;
+	while (NotCorrectDate(dd, mm, yy))
+	{
+		printf("Введите правильные день, месяц, год: ");
+		if (scanf("%d", &dd) != 1) scanf("%*s");
+		if (scanf("%d", &mm) != 1) scanf("%*s");
+		if (scanf("%d", &yy) != 1) scanf("%*s");
+	}
+	printf("Введите ФИО: ");
+	getchar();
+	char str[100];
+	fflush(stdin);
+	gets(str);
+	strcpy(str, SpaceReplace(str));
+	p = AddBirthday(p, max + 1, dd, mm, yy, str);
+	(*BDCount)++;
+}
+
+void AddInputCelebration(Celebration* A, int* CLCount)
+{
+	Celebration *p, *g;int max = 0;
+	p = A;
+	do
+	{
+		if (p->id > max) max = p->id;
+		g = p;
+		p = p->next;
+	} while (p != NULL);
+	p = g;
+	int dd = 0, mm = 0, yy = 0;
+	while (NotCorrectDate(dd, mm, yy))
+	{
+		printf("Введите правильные день, месяц: ");
+		if (scanf("%d", &dd) != 1) scanf("%*s");
+		if (scanf("%d", &mm) != 1) scanf("%*s");
+	}
+	printf("Введите название: ");
+	getchar();
+	char str[100];
+	fflush(stdin);
+	gets(str);
+	strcpy(str, SpaceReplace(str));
+	p = AddCelebration(p, max + 1, dd, mm, str);
+	(*CLCount)++;
+}
+
+void AddInputEvent(Event* A, int *EVCount)
+{
+	Event *p, *g;int max = 0;
+	p = A;
+	do
+	{
+		if (p->id > max) max = p->id;
+		g = p;
+		p = p->next;
+	} while (p != NULL);
+	p = g;
+	int dd = 0, mm = 0, yy = 0;
+	while (NotCorrectDate(dd, mm, yy))
+	{
+		printf("Введите правильные день, месяц, год: ");
+		if (scanf("%d", &dd) != 1) scanf("%*s");
+		if (scanf("%d", &mm) != 1) scanf("%*s");
+		if (scanf("%d", &yy) != 1) scanf("%*s");
+	}
+	printf("Введите описание: ");
+	getchar();
+	char str[30];
+	fflush(stdin);
+	gets(str);
+	strcpy(str, SpaceReplace(str));
+	p = AddEvent(p, max + 1, dd, mm, yy, str);
+	(*EVCount)++;
+}
+
+void Delete(Birthday* B, Celebration* C, Event* E, int *BDcount, int *CLcount, int *EVcount)
+{
+	int n = 0;
+	while (n != 4)
+	{
+		while ((n <= 0) || (n > 4))
+		{
+			system("cls");
+			printf("1) Удалить день рождения;\n");
+			printf("2) Удалить праздник;\n");
+			printf("3) Удалить событие;\n");
+			printf("4) Выход в основное меню;\n");
+			printf("Введите корректно номер команды: ");
+			if (scanf("%d", &n) != 1) scanf("%*s");
+		}
+		int id = 0;
+		switch (n)
+		{
+		case 1:if (*BDcount == 0) { printf("Нет дней рождения\n"); break; } ShowBirthdayList(B);id = ChooseBirthdayId(B);if (id != -1) { DeleteBirthday(B, id);ShowBirthdayList(B);(*BDcount)--; }break;
+		case 2:if (*CLcount == 0) { printf("Нет праздников\n"); break; } ShowCelebrationList(C);id = ChooseCelebrationId(C);if (id != -1) { DeleteCelebration(C, id);ShowCelebrationList(C);(*CLcount)--; }break;
+		case 3:if (*EVcount == 0) { printf("Нет событий\n"); break; } ShowEventList(E);id = ChooseEventId(E);if (id != -1) { DeleteEvent(E, id);ShowEventList(E);(*EVcount)--; }break;
+		case 4:return;break;
+		}
+
+		SaveFile(B, C, E, *BDcount, *CLcount, *EVcount);
+		system("pause");
+		n = 0;
+	}
+
+}
+
+void DeleteBirthday(Birthday* A, int id)
+{
+	Birthday *temp, *g = NULL;
+	temp = A;
+	while (temp->id != id)
+	{
+		g = temp;
+		temp = temp->next;
+	}
+	g->next = temp->next;
+	free(temp);
+}
+
+
+void DeleteCelebration(Celebration* A, int id)
+{
+	Celebration *temp, *g = NULL;
+	temp = A;
+	while (temp->id != id)
+	{
+		g = temp;
+		temp = temp->next;
+	}
+	g->next = temp->next;
+	free(temp);
+}
+void DeleteEvent(Event* A, int id)
+{
+	Event *temp, *g = NULL;
+	temp = A;
+	while (temp->id != id)
+	{
+		g = temp;
+		temp = temp->next;
+	}
+	g->next = temp->next;
+	free(temp);
+}
+
+
+
+
+
+int ChooseBirthdayId(Birthday* A)
+{
+	int n = 0, id = -1;bool exists = false;
+	while (id <= 0)
+	{
+		printf("Введите id: ");
+		if (scanf("%d", &id) != 1) scanf("%*s");
+	}
+	Birthday *p;
+	p = A;
+	do
+	{
+		if (p->id == id) { exists = true;break; }
+		p = p->next;
+	} while (p != NULL);
+	if (!exists) return -1;else return id;
+}
+
+int ChooseCelebrationId(Celebration* A)
+{
+	int n = 0, id = 0;bool exists = false;
+	while (id <= 0)
+	{
+		printf("Введите id: ");
+		if (scanf("%d", &id) != 1) scanf("%*s");
+	}
+	Celebration *p;
+	p = A;
+	do
+	{
+		if (p->id == id) { exists = true;break; }
+		p = p->next;
+	} while (p != NULL);
+	if (!exists) return -1;else return id;
+}
+
+int ChooseEventId(Event* A)
+{
+	int n = 0, id = 0;bool exists = false;
+	while (id <= 0)
+	{
+		printf("Введите id: ");
+		if (scanf("%d", &id) != 1) scanf("%*s");
+	}
+	Event *p;
+	p = A;
+	do
+	{
+		if (p->id == id) { exists = true;break; }
+		p = p->next;
+	} while (p != NULL);
+	if (!exists) return -1;else return id;
+}
+
+char * SpaceReplace(char s[])
+{
+	char str[50];
+	strcpy(str, s);
+	while (strchr(str, ' ') != NULL)
+	{
+		char *i;
+		i = strchr(str, ' ');
+		if (i != NULL) *i = '_';
+	}
+	return str;
+}ay*)
